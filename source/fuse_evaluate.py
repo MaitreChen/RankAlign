@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from rankalign.metrics import evaluate_scores
 from rankalign.data import load_training_data
+from rankalign.config import load_config
 
 KEYS = ["video_id", "subject_id", "diagnosis", "y_true"]
 
@@ -54,12 +55,14 @@ def load_segment_branch(path: Path, data_root: Path) -> pd.DataFrame:
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--config", type=Path, default=Path("configs/rankalign.json"))
     parser.add_argument("--segment-oof", type=Path, required=True)
     parser.add_argument("--data-root", type=Path, help="Required when segment OOF contains 2400 segment rows")
     parser.add_argument("--minmax-oof", type=Path, required=True)
     parser.add_argument("--zscore-oof", type=Path, required=True)
     parser.add_argument("--output", type=Path, default=Path("outputs/rankalign_oof.csv"))
     args = parser.parse_args()
+    config = load_config(args.config)
 
     segment_frame = pd.read_csv(args.segment_oof, nrows=1)
     if "video_id" not in segment_frame and args.data_root is None:
@@ -67,7 +70,12 @@ def main():
     merged = load_segment_branch(args.segment_oof, args.data_root)
     merged = merged.merge(load_branch(args.minmax_oof, "minmax"), on=KEYS, validate="one_to_one")
     merged = merged.merge(load_branch(args.zscore_oof, "zscore"), on=KEYS, validate="one_to_one")
-    merged["positive_probability"] = 0.600 * merged.segment + 0.305 * merged.minmax + 0.095 * merged.zscore
+    weights = config["fusion"]
+    merged["positive_probability"] = (
+        weights["segment"] * merged.segment
+        + weights["spectral_minmax"] * merged.minmax
+        + weights["spectral_zscore"] * merged.zscore
+    )
     metrics = evaluate_scores(
         merged.y_true.to_numpy(), merged.positive_probability.to_numpy(), merged.subject_id.astype(str).to_numpy()
     )

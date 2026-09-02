@@ -14,6 +14,7 @@ from sklearn.preprocessing import StandardScaler
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from rankalign.data import load_training_data
+from rankalign.config import load_config
 from rankalign.features import aggregate_trials, de_welch_features, subject_normalize
 from rankalign.metrics import evaluate_scores
 
@@ -33,19 +34,20 @@ def train_branch(x, y, subjects, c_value, folds, seed):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--config", type=Path, default=Path("configs/rankalign.json"))
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, default=Path("outputs/spectral"))
-    parser.add_argument("--folds", type=int, default=5)
-    parser.add_argument("--seed", type=int, default=2029)
     args = parser.parse_args()
 
+    config = load_config(args.config)
     data = load_training_data(args.data_root)
     segment_features = de_welch_features(data.x)
     x, y, subjects, diagnosis, video_ids = aggregate_trials(segment_features, data)
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    for mode, c_value in (("minmax", 0.05), ("zscore", 0.03)):
+    branches = (("minmax", config["spectral"]["minmax_c"]), ("zscore", config["spectral"]["zscore_c"]))
+    for mode, c_value in branches:
         normalized = subject_normalize(x, subjects, mode)
-        oof = train_branch(normalized, y, subjects, c_value, args.folds, args.seed)
+        oof = train_branch(normalized, y, subjects, c_value, config["folds"], config["seed"])
         frame = pd.DataFrame({
             "video_id": video_ids,
             "subject_id": subjects,

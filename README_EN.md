@@ -4,11 +4,35 @@
 
 Official implementation of **RankAlign-EEG: Multi-Granularity EEG Emotion Recognition Based on Within-Subject Ranking Constraint and Cross-Subject Alignment**.
 
-## Introduction
+🎉 This project won the **First Prize** in the **11th National College Student Biomedical Engineering Innovation Design Competition**! 🎉
+
+## ⚡ Quick Start
+
+Clone the repository and install the dependencies:
+
+```bash
+git clone https://github.com/MaitreChen/RankAlign.git
+cd RankAlign
+python -m venv .venv
+.venv/Scripts/activate
+pip install -r requirements.txt
+```
+
+Place the competition data under `data/train/HC` and `data/train/DEP` as described in [Dataset](#-dataset), then run the complete subject-disjoint OOF pipeline:
+
+```bash
+python source/train_segment.py --config configs/rankalign.json --data-root data --output outputs/segment_oof.csv
+python source/train_spectral.py --config configs/rankalign.json --data-root data --output-dir outputs/spectral
+python source/fuse_evaluate.py --config configs/rankalign.json --data-root data --segment-oof outputs/segment_oof.csv --minmax-oof outputs/spectral/minmax_oof.csv --zscore-oof outputs/spectral/zscore_oof.csv --output outputs/rankalign_oof.csv
+```
+
+The last command reports Rank-BAcc and AUC and saves the fused OOF predictions to `outputs/rankalign_oof.csv`. See [Reproduction](#-reproduction) for individual steps and test commands.
+
+## 🌟 Introduction
 
 EEG emotion recognition is challenging because signals are noisy, labelled datasets are small, and physiological distributions vary substantially between subjects. A model trained on known participants can therefore learn subject-specific patterns and generalize poorly to unseen participants.
 
-This project was developed for the **11th National College Student Biomedical Engineering Innovation Design Competition** (第十一届全国大学生生物医学工程创新设计竞赛), where it won the **First Prize**. The competition task is binary EEG emotion recognition involving healthy controls (HC) and participants with depression (DEP): determining whether an EEG trial represents a **neutral** or **positive** emotional state. The evaluation is cross-subject, meaning that test participants are not present during training.
+The competition task is binary EEG emotion recognition involving healthy controls (HC) and participants with depression (DEP): determining whether an EEG trial represents a **neutral** or **positive** emotional state. The evaluation is cross-subject, meaning that test participants are not present during training.
 
 The competition protocol provides an additional structural prior. Each test participant has eight trials—four positive and four neutral—in an unknown order. RankAlign-EEG uses this public constraint during inference: it ranks the eight positive-class probabilities within each participant and assigns the top four trials to the positive class instead of applying one global threshold.
 
@@ -18,7 +42,7 @@ RankAlign-EEG addresses three practical difficulties:
 2. **Noisy and limited EEG observations:** multi-granularity modelling combines an EEGNet-style encoder [2] with differential entropy (DE) [3] and Welch spectral statistics [4].
 3. **Subject-dependent probability calibration:** within-subject Top-4 ranking replaces a potentially biased global threshold.
 
-## Dataset
+## 📊 Dataset
 
 The EEG signals contain 30 channels sampled at 250 Hz. One 10-second segment therefore has the shape `30 × 2500`.
 
@@ -49,7 +73,7 @@ DATA_ROOT/
 
 Each training MAT file must contain `EEG_data_neu` and `EEG_data_pos`. Signals can be channel-first or channel-last, but must contain 30 channels.
 
-## Method
+## 🧠 Method
 
 The overall RankAlign-EEG architecture is shown below.
 
@@ -104,13 +128,13 @@ The segment branch uses a compact EEGNet-style architecture [2] to learn tempora
 
 ### Probability fusion
 
-The fixed fusion used for the reported local result is
+The final score is a weighted combination of the three probability branches:
 
 $$
-p_{final}=0.600p_{segment}+0.305p_{minmax}+0.095p_{zscore}.
+p_{final}=\lambda_{segment}p_{segment}+\lambda_{minmax}p_{minmax}+\lambda_{zscore}p_{zscore}.
 $$
 
-The weights are fixed after subject-disjoint OOF validation. Raw rather than rank-normalized probabilities are fused.
+The three fusion coefficients, \(\lambda_{segment}\), \(\lambda_{minmax}\), and \(\lambda_{zscore}\), are stored in `configs/rankalign.json` and fixed after subject-disjoint OOF validation. Raw rather than rank-normalized probabilities are fused.
 
 ### Within-subject Top-4 inference
 
@@ -122,7 +146,7 @@ $$
 
 Top-4 is an inference constraint derived from the public competition protocol. It is not a ranking loss and does not use hidden test labels.
 
-## Results
+## 📈 Results
 
 ### Local subject-disjoint validation
 
@@ -166,7 +190,7 @@ The feature visualization compares the trial-level distributions before and afte
 
 *Figure 3. Trial-level feature-distribution visualization before and after RankAlign-EEG.*
 
-## Installation
+## ⚙️ Installation
 
 ```bash
 python -m venv .venv
@@ -174,18 +198,31 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## Reproduction
+## 🚀 Reproduction
+
+Generate the segment-level OOF branch:
+
+```bash
+python source/train_segment.py \
+  --config configs/rankalign.json \
+  --data-root DATA_ROOT \
+  --output outputs/segment_oof.csv
+```
 
 Generate the two spectral OOF branches:
 
 ```bash
-python source/train_spectral.py --data-root DATA_ROOT --output-dir outputs/spectral
+python source/train_spectral.py \
+  --config configs/rankalign.json \
+  --data-root DATA_ROOT \
+  --output-dir outputs/spectral
 ```
 
 Evaluate the fixed fusion after producing the segment OOF predictions:
 
 ```bash
 python source/fuse_evaluate.py \
+  --config configs/rankalign.json \
   --data-root DATA_ROOT \
   --segment-oof outputs/segment_oof.csv \
   --minmax-oof outputs/spectral/minmax_oof.csv \
@@ -200,7 +237,7 @@ set PYTHONPATH=source
 python -m unittest discover -s source/tests
 ```
 
-## Repository structure
+## 📁 Repository structure
 
 ```text
 RankAlign/
@@ -208,6 +245,7 @@ RankAlign/
 |-- README_EN.md
 |-- README_CN.md
 |-- requirements.txt
+|-- LICENSE
 |-- configs/rankalign.json
 |-- figures/
 |   |-- framework.svg
@@ -215,12 +253,13 @@ RankAlign/
 |   `-- visualization_analysis.svg
 `-- source/
     |-- rankalign/
+    |-- train_segment.py
     |-- train_spectral.py
     |-- fuse_evaluate.py
     `-- tests/
 ```
 
-## References
+## 📚 References
 
 1. H. He and D. Wu, “Transfer Learning for Brain–Computer Interfaces: A Euclidean Space Data Alignment Approach,” *IEEE Transactions on Biomedical Engineering*, 67(2):399–410, 2020. [doi:10.1109/TBME.2019.2913914](https://doi.org/10.1109/TBME.2019.2913914)
 2. V. J. Lawhern, A. J. Solon, N. R. Waytowich, S. M. Gordon, C. P. Hung, and B. J. Lance, “EEGNet: A Compact Convolutional Neural Network for EEG-Based Brain–Computer Interfaces,” *Journal of Neural Engineering*, 15(5):056013, 2018. [doi:10.1088/1741-2552/aace8c](https://doi.org/10.1088/1741-2552/aace8c)
@@ -236,11 +275,11 @@ RankAlign/
 12. D. L. Davies and D. W. Bouldin, “A Cluster Separation Measure,” *IEEE Transactions on Pattern Analysis and Machine Intelligence*, PAMI-1(2):224–227, 1979. [doi:10.1109/TPAMI.1979.4766909](https://doi.org/10.1109/TPAMI.1979.4766909)
 13. P. J. Rousseeuw, “Silhouettes: A Graphical Aid to the Interpretation and Validation of Cluster Analysis,” *Journal of Computational and Applied Mathematics*, 20:53–65, 1987. [doi:10.1016/0377-0427(87)90125-7](https://doi.org/10.1016/0377-0427(87)90125-7)
 
-## License
+## 📄 License
 
-License selection is pending. Do not redistribute the competition dataset unless its original terms explicitly permit redistribution.
+The source code is released under the [MIT License](LICENSE). The competition dataset is not covered by this software license and is not redistributed in this repository. Users must obtain the data from the competition organizer and comply with the organizer's terms.
 
-## Conclusion
+## 🎯 Conclusion
 
 RankAlign-EEG tackles cross-subject EEG emotion recognition through a coordinated pipeline rather than a single oversized network. Euclidean Alignment reduces subject-dependent covariance shift, the segment and trial branches combine complementary spatio-temporal and spectral evidence, and Top-4 inference addresses subject-dependent probability calibration under the public competition protocol. The method achieved 84.58% local Rank-BAcc and 89.76% AUC, together with 75.0% accuracy on the official public test set and 82.5% on the official private test set. These results demonstrate the value of combining cross-subject alignment, multi-granularity evidence, and structured within-subject decisions.
 

@@ -5,6 +5,17 @@
   "segments_per_trial": 5,
   "folds": 5,
   "seed": 2029,
+  "segment": {
+    "seeds": [42, 3407, 2029],
+    "epochs": 20,
+    "batch_size": 64,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "dropout": 0.35,
+    "patience": 6,
+    "boundary_window": 2,
+    "boundary_strength": 0.025
+  },
   "spectral": {
     "minmax_c": 0.05,
     "zscore_c": 0.03
