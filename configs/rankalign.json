@@ -1,0 +1,18 @@
+{
+  "sample_rate": 250,
+  "n_channels": 30,
+  "segment_seconds": 10,
+  "segments_per_trial": 5,
+  "folds": 5,
+  "seed": 2029,
+  "spectral": {
+    "minmax_c": 0.05,
+    "zscore_c": 0.03
+  },
+  "fusion": {
+    "segment": 0.600,
+    "spectral_minmax": 0.305,
+    "spectral_zscore": 0.095
+  },
+  "top_k": 4
+}
