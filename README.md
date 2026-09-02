@@ -87,7 +87,7 @@ The overall RankAlign-EEG architecture is shown below.
 For subject \(s\), the mean covariance matrix is
 
 $$
-R_s=\frac{1}{n_s}\sum_{i:s_i=s}\operatorname{cov}(X_i),
+R_s=\frac{1}{n_s}\sum_{i:s_i=s}\mathrm{cov}(X_i),
 $$
 
 and each trial is whitened using
@@ -117,7 +117,7 @@ The weights are fixed after subject-disjoint OOF validation. Raw rather than ran
 The eight fused positive probabilities of each test participant are sorted in descending order. The top four trials are predicted as positive and the other four as neutral:
 
 $$
-\hat y_{s,j}=\mathbb{1}\left[\operatorname{rank}_s(p_{s,j})\leq4\right].
+\hat y_{s,j}=\mathbb{1}\left[\mathrm{rank}_s(p_{s,j})\leq4\right].
 $$
 
 Top-4 is an inference constraint derived from the public competition protocol. It is not a ranking loss and does not use hidden test labels.

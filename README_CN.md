@@ -87,7 +87,7 @@ RankAlign-EEG 的总体架构如下图所示。
 对于被试 \(s\)，首先估计平均协方差矩阵：
 
 $$
-R_s=\frac{1}{n_s}\sum_{i:s_i=s}\operatorname{cov}(X_i),
+R_s=\frac{1}{n_s}\sum_{i:s_i=s}\mathrm{cov}(X_i),
 $$
 
 随后对每个试次进行白化：
@@ -117,7 +117,7 @@ $$
 对于每名测试被试，将 8 个融合后的积极类概率按降序排列。前 4 个试次预测为积极，其余 4 个预测为中性：
 
 $$
-\hat y_{s,j}=\mathbb{1}\left[\operatorname{rank}_s(p_{s,j})\leq4\right].
+\hat y_{s,j}=\mathbb{1}\left[\mathrm{rank}_s(p_{s,j})\leq4\right].
 $$
 
 Top-4 来自公开赛题协议，是推理约束而非 ranking loss，也不使用隐藏的测试标签。
